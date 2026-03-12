@@ -3,6 +3,8 @@
  * 生成API文档数据结构
  */
 
+const fs = require('fs');
+const path = require('path');
 const FastAPIParser = require('../parser/FastAPIParser');
 
 class DocGenerator {
@@ -41,10 +43,29 @@ class DocGenerator {
     }
 
     try {
-      const parsedAPIs = this.parser.parse(entryPath);
+      // 解析路径：如果是相对路径，基于当前工作目录
+      let absolutePath;
+      if (path.isAbsolute(entryPath)) {
+        absolutePath = entryPath;
+      } else {
+        // 基于配置文件所在目录或当前工作目录
+        const basePath = process.cwd();
+        absolutePath = path.resolve(basePath, entryPath);
+      }
+
+      console.log(`Parsing file: ${absolutePath}`);
+
+      // 检查文件是否存在
+      if (!fs.existsSync(absolutePath)) {
+        throw new Error(`File not found: ${absolutePath}`);
+      }
+
+      const parsedAPIs = this.parser.parse(absolutePath);
       apis.push(...parsedAPIs);
     } catch (error) {
       console.error('Error parsing entry file:', error.message);
+      // 返回空数组而不是抛出错误，让服务器能继续运行
+      return [];
     }
 
     return apis;

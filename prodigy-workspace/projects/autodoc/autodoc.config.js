@@ -1,4 +1,4 @@
-# AutoDoc 配置文件
+// AutoDoc 配置文件
 
 module.exports = {
   // 入口文件（Python FastAPI项目的主文件）
@@ -13,7 +13,7 @@ module.exports = {
   version: '1.0.0',
 
   // 服务器配置
-  port: 3000,
+  port: 3001,  // 后端端口（前端使用3000）
 
   // 监听配置
   watch: true,

@@ -20,6 +20,8 @@ class FastAPIParser {
     const content = fs.readFileSync(filePath, 'utf-8');
     this.apis = [];
 
+    console.log(`[Parser] File content length: ${content.length}`);
+
     // 查找所有路由装饰器
     const routePatterns = [
       /@app\.get\("([^"]+)"\)/g,
@@ -30,12 +32,18 @@ class FastAPIParser {
 
     routePatterns.forEach(pattern => {
       let match;
+      let matchCount = 0;
+      let method = 'unknown';
       while ((match = pattern.exec(content)) !== null) {
-        const method = match[0].match(/app\.(\w+)/)[1].toUpperCase();
+        matchCount++;
+        method = match[0].match(/app\.(\w+)/)[1].toUpperCase();
         const routePath = match[1];
 
-        // 提取函数定义
-        const funcMatch = this.findFunctionDefinition(content, match.index);
+        console.log(`[Parser] Found ${method} route: ${routePath}`);
+
+        // 提取函数定义（从装饰器之后开始）
+        const decoratorEnd = match.index + match[0].length;
+        const funcMatch = this.findFunctionDefinition(content, decoratorEnd);
         if (funcMatch) {
           const api = {
             id: this.generateId(method, routePath),
@@ -48,10 +56,18 @@ class FastAPIParser {
             tags: this.extractTags(routePath),
           };
           this.apis.push(api);
+          console.log(`[Parser] API parsed: ${method} ${routePath}`);
+        } else {
+          console.log(`[Parser] Failed to find function definition for ${routePath}`);
         }
+      }
+
+      if (matchCount > 0) {
+        console.log(`[Parser] Pattern matched ${matchCount} times for ${method}`);
       }
     });
 
+    console.log(`[Parser] Total APIs parsed: ${this.apis.length}`);
     return this.apis;
   }
 
@@ -62,9 +78,10 @@ class FastAPIParser {
    * @returns {Object} 函数信息
    */
   findFunctionDefinition(content, startIndex) {
+    // 跳过装饰器后的空白行，找到函数定义
     const remainingContent = content.slice(startIndex);
-    const asyncMatch = remainingContent.match(/^async\s+def\s+(\w+)\([^)]*\):/);
-    const defMatch = remainingContent.match(/^def\s+(\w+)\([^)]*\):/);
+    const asyncMatch = remainingContent.match(/^\s*async\s+def\s+(\w+)\([^)]*\):/);
+    const defMatch = remainingContent.match(/^\s*def\s+(\w+)\([^)]*\):/);
 
     const match = asyncMatch || defMatch;
     if (!match) return null;

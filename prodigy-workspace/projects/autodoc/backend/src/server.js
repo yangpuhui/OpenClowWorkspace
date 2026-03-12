@@ -194,16 +194,45 @@ module.exports = AutoDocServer;
 
 // 如果直接运行此文件，启动服务器
 if (require.main === module) {
-  const config = {
-    entry: process.env.ENTRY_FILE || './app.py',
-    output: process.env.OUTPUT_DIR || './docs',
-    title: process.env.API_TITLE || 'API Documentation',
-    version: process.env.API_VERSION || '1.0.0',
-    description: process.env.API_DESCRIPTION || '',
-    port: process.env.PORT || 3000,
+  // 尝试加载配置文件
+  let config;
+
+  try {
+    // 查找 autodoc.config.js 文件
+    const configPaths = [
+      path.join(__dirname, '../../autodoc.config.js'),  // 从 backend/src/ 向上两级到项目根目录
+      path.join(process.cwd(), 'autodoc.config.js'),     // 当前工作目录
+    ];
+
+    for (const configPath of configPaths) {
+      if (fs.existsSync(configPath)) {
+        console.log(`Loading config from: ${configPath}`);
+        config = require(configPath);
+        break;
+      }
+    }
+
+    if (!config) {
+      console.warn('No config file found, using defaults');
+      config = {};
+    }
+  } catch (error) {
+    console.error('Error loading config:', error.message);
+    config = {};
+  }
+
+  // 合并环境变量配置（环境变量优先级最高）
+  const finalConfig = {
+    entry: process.env.ENTRY_FILE || config.entry || './app.py',
+    output: process.env.OUTPUT_DIR || config.output || './docs',
+    title: process.env.API_TITLE || config.title || 'API Documentation',
+    version: process.env.API_VERSION || config.version || '1.0.0',
+    description: process.env.API_DESCRIPTION || config.description || '',
+    port: process.env.PORT || config.port || 3000,
+    watch: process.env.WATCH !== 'false' && (config.watch !== false),
   };
 
-  const server = new AutoDocServer(config);
+  const server = new AutoDocServer(finalConfig);
 
   server.start(config.port).catch((error) => {
     console.error('Failed to start server:', error);
