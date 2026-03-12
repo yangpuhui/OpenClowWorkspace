@@ -1,28 +1,23 @@
 @echo off
-echo ========================================
-echo   AutoDoc - Quick Start
-echo ========================================
-echo.
-
 cd /d "%~dp0"
 
-echo [1/3] Starting backend server...
-start "AutoDoc Backend" cmd /k "cd backend && npm install && node src/server.js"
+echo Starting AutoDoc...
+echo.
 
-echo Waiting for backend to start...
-timeout /t 3 /nobreak > nul
+echo [1/2] Starting backend (port 3001)...
+start "AutoDoc Backend" cmd /k "node backend/src/server.js"
+
+echo [2/2] Starting frontend (port 3000)...
+cd frontend
+if not exist node_modules call npm install
+start "AutoDoc Frontend" cmd /k "npm run dev"
+cd ..
 
 echo.
-echo [2/3] Starting frontend server...
-start "AutoDoc Frontend" cmd /k "cd frontend && npm install && npm run dev"
-
+echo AutoDoc is running!
+echo   Frontend: http://localhost:3000
+echo   Backend:  http://localhost:3001
 echo.
-echo [3/3] AutoDoc is running!
-echo.
-echo Frontend: http://localhost:3000
-echo Backend API: http://localhost:3001
-echo.
-echo Press any key to open the documentation in your browser...
-pause > nul
-
+echo Opening browser...
+timeout /t 2 /nobreak > nul
 start http://localhost:3000
