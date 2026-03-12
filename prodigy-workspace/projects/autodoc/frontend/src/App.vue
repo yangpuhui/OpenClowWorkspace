@@ -46,11 +46,11 @@
                 <span class="path">{{ endpoint.path }}</span>
               </div>
               <span class="toggle-icon">
-                {{ endpoint.expanded ? '▼' : '▶' }}
+                {{ isExpanded(endpoint) ? '▼' : '▶' }}
               </span>
             </div>
 
-            <div v-if="endpoint.expanded" class="endpoint-details">
+            <div v-if="isExpanded(endpoint)" class="endpoint-details">
               <div class="detail-section">
                 <h3>Description</h3>
                 <p>{{ endpoint.description || 'No description available' }}</p>
@@ -117,19 +117,21 @@ export default {
     const loading = ref(false)
     const error = ref('')
     const searchQuery = ref('')
+    const expandedEndpoints = ref(new Set())  // Track expanded state separately
 
     const filteredEndpoints = computed(() => {
-      if (!searchQuery.value.trim()) {
-        return docs.value.map(ep => ({ ...ep, expanded: false }))
-      }
+      // Filter without modifying expanded state
+      let filtered = docs.value
 
-      const query = searchQuery.value.toLowerCase()
-      return docs.value
-        .filter(ep =>
+      if (searchQuery.value.trim()) {
+        const query = searchQuery.value.toLowerCase()
+        filtered = docs.value.filter(ep =>
           ep.path.toLowerCase().includes(query) ||
           ep.description?.toLowerCase().includes(query)
         )
-        .map(ep => ({ ...ep, expanded: false }))
+      }
+
+      return filtered
     })
 
     const fetchDocs = async () => {
@@ -160,7 +162,17 @@ export default {
     }
 
     const toggleEndpoint = (endpoint) => {
-      endpoint.expanded = !endpoint.expanded
+      const key = `${endpoint.method}-${endpoint.path}`
+      if (expandedEndpoints.value.has(key)) {
+        expandedEndpoints.value.delete(key)
+      } else {
+        expandedEndpoints.value.add(key)
+      }
+    }
+
+    const isExpanded = (endpoint) => {
+      const key = `${endpoint.method}-${endpoint.path}`
+      return expandedEndpoints.value.has(key)
     }
 
     const getStatusClass = (status) => {
@@ -181,9 +193,11 @@ export default {
       loading,
       error,
       searchQuery,
+      expandedEndpoints,
       filteredEndpoints,
       fetchDocs,
       toggleEndpoint,
+      isExpanded,
       getStatusClass
     }
   }
