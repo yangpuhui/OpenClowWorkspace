@@ -3,7 +3,7 @@
  * 生成API文档数据结构
  */
 
-const FastAPIParser = require('./parser/FastAPIParser');
+const FastAPIParser = require('../parser/FastAPIParser');
 
 class DocGenerator {
   constructor(config) {
