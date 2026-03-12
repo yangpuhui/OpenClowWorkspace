@@ -138,7 +138,19 @@ export default {
 
       try {
         const response = await axios.get('/api/docs')
-        docs.value = response.data.endpoints || []
+        console.log('API Response:', response.data)
+
+        // Handle both old format (endpoints) and new format (groups)
+        if (response.data.endpoints) {
+          docs.value = response.data.endpoints
+        } else if (response.data.groups) {
+          // Flatten groups into a single array of endpoints
+          docs.value = response.data.groups.flatMap(group => group.apis || [])
+        } else {
+          docs.value = []
+        }
+
+        console.log('Docs loaded:', docs.value.length)
       } catch (err) {
         error.value = 'Failed to fetch documentation. Please make sure the backend server is running.'
         console.error('Error fetching docs:', err)
